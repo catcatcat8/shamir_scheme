@@ -3,11 +3,13 @@
 #include <iomanip>
 #include <vector>
 #include <stdio.h>
+#include <stdlib.h>
 #include <cmath>
 #include <openssl/bn.h>
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 #include <openssl/ossl_typ.h>
+#include <cstdlib>
 
 /* Возвращает SHA-256 hash */
 std::string sha256(const std::string str) {
@@ -38,14 +40,15 @@ BIGNUM *polinom(std::vector<uint64_t> coefs, std::string secr, int x) {
     int cur_pow = 1;
     BIGNUM *result = BN_new();
     BN_CTX *ctx = BN_CTX_new();
-    unsigned long long int cur_result = 0;
+    int cur_result = 0;
     for (auto i: coefs) {
         cur_result += (pow(x,cur_pow)*i);
         cur_pow += 1;
     }
-    char *str = nullptr;
+    std::string _s = std::to_string(cur_result);
+    char const *str= _s.c_str();
     BIGNUM *pre_res = NULL;
-    sprintf(str, "%u", cur_result);
+
     BN_dec2bn(&pre_res, str);
     BIGNUM *p = NULL;  //переводим secret в BIGNUM
     const char *pr_key = secr.c_str();
