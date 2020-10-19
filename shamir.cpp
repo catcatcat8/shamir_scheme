@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 #include <string>
 #include <iomanip>
 #include <vector>
@@ -36,24 +37,37 @@ std::string curve25519_pr_key_gen() {
     return curve25519_pr_key;
 }
 
-BIGNUM *polinom(std::vector<uint64_t> coefs, std::string secr, int x) {
+BIGNUM *polinom(std::vector<unsigned char*> coefs, std::string secr, int x) {
     int cur_pow = 1;
     BIGNUM *result = BN_new();
     BN_CTX *ctx = BN_CTX_new();
-    uint64_t cur_result = 0;
+    int j = 1;
+    BIGNUM *sum = BN_new();
     for (auto i: coefs) {
-        cur_result += (pow(x,cur_pow)*i);
-        cur_pow += 1;
-    }
-    std::string _s = std::to_string(cur_result);
-    char const *str= _s.c_str();
-    BIGNUM *pre_res = NULL;
+        BN_CTX *ctx = BN_CTX_new();
+        BIGNUM *coef_pov_res = NULL;
+        BIGNUM *coef_res = NULL;
+        BN_hex2bn(&coef_res, (const char*)i);
 
-    BN_dec2bn(&pre_res, str);
+        BIGNUM *x_res = NULL;
+        std::string x_int = std::to_string(x);
+        char const *x_char = x_int.c_str();
+        BN_dec2bn(&x_res, x_char);
+
+        coef_pov_res = x_res;
+        for (int jj=0; jj<j; jj++) {  //возведение в степень bignum
+            BN_mul(x_res, coef_pov_res, x_res, ctx);
+        }
+
+        BN_mul(coef_res, x_res, coef_res, ctx);
+        BN_add(sum, sum, coef_res);
+
+        j += 1;
+    }
     BIGNUM *p = NULL;  //переводим secret в BIGNUM
     const char *pr_key = secr.c_str();
     BN_hex2bn(&p, pr_key);
-    BN_add(result, p, pre_res);
+    BN_add(result, p, sum);
     return result;
 }
 
@@ -61,11 +75,21 @@ BIGNUM *polinom(std::vector<uint64_t> coefs, std::string secr, int x) {
 std::vector<std::pair<int, std::string>> split(std::string secret, uint16_t n, uint16_t t) {
     std::vector<std::string> shares;
     std::vector<std::pair<int, std::string>> shares_bignum;  //куски - точки типа (int, BIGNUM)
-    std::vector<BIGNUM*> coefs_bignum;
 
-    std::vector<uint64_t> coefs;
+    /*std::vector<uint64_t> coefs;
     for (int i = 1; i<t; i++) {
         coefs.push_back((1 + std::rand() % (18446744073709551614)));
+    }
+    */
+    std::vector<unsigned char*> coefs;
+
+    for (int i=1; i<t; i++) {
+        unsigned char buf[32];
+        RAND_bytes(buf, 32);  //генерируем 32 рандомных байта
+        std::string str_buf((char*)buf);
+        std::string cur_cof = sha256(str_buf);
+        strcpy((char*)buf, cur_cof.c_str());
+        coefs.push_back(buf);
     }
     /*
     for (auto i: coefs) {  //переводим все коэффициенты в BIGNUM
