@@ -37,7 +37,7 @@ std::string curve25519_pr_key_gen() {
     return curve25519_pr_key;
 }
 
-BIGNUM *polinom(std::vector<unsigned char*> coefs, std::string secr, int x) {
+BIGNUM *polinom(std::vector<std::string> coefs, std::string secr, int x) {
     int cur_pow = 1;
     BIGNUM *result = BN_new();
     BN_CTX *ctx = BN_CTX_new();
@@ -47,7 +47,8 @@ BIGNUM *polinom(std::vector<unsigned char*> coefs, std::string secr, int x) {
         BN_CTX *ctx = BN_CTX_new();
         BIGNUM *coef_pov_res = NULL;
         BIGNUM *coef_res = NULL;
-        BN_hex2bn(&coef_res, (const char*)i);
+        const char * c = i.c_str();
+        BN_hex2bn(&coef_res, c);
 
         BIGNUM *x_res = NULL;
         std::string x_int = std::to_string(x);
@@ -63,17 +64,19 @@ BIGNUM *polinom(std::vector<unsigned char*> coefs, std::string secr, int x) {
         BN_add(sum, sum, coef_res);
 
         j += 1;
+        BN_free(coef_pov_res);
+        BN_free(coef_res);
     }
     BIGNUM *p = NULL;  //переводим secret в BIGNUM
     const char *pr_key = secr.c_str();
     BN_hex2bn(&p, pr_key);
     BN_add(result, p, sum);
+
     return result;
 }
 
 /* Разделение секрета на N частей */
 std::vector<std::pair<int, std::string>> split(std::string secret, uint16_t n, uint16_t t) {
-    std::vector<std::string> shares;
     std::vector<std::pair<int, std::string>> shares_bignum;  //куски - точки типа (int, BIGNUM)
 
     /*std::vector<uint64_t> coefs;
@@ -81,15 +84,14 @@ std::vector<std::pair<int, std::string>> split(std::string secret, uint16_t n, u
         coefs.push_back((1 + std::rand() % (18446744073709551614)));
     }
     */
-    std::vector<unsigned char*> coefs;
+    std::vector<std::string> coefs;
 
     for (int i=1; i<t; i++) {
         unsigned char buf[32];
         RAND_bytes(buf, 32);  //генерируем 32 рандомных байта
         std::string str_buf((char*)buf);
         std::string cur_cof = sha256(str_buf);
-        strcpy((char*)buf, cur_cof.c_str());
-        coefs.push_back(buf);
+        coefs.push_back(cur_cof);
     }
     /*
     for (auto i: coefs) {  //переводим все коэффициенты в BIGNUM
@@ -106,7 +108,10 @@ std::vector<std::pair<int, std::string>> split(std::string secret, uint16_t n, u
         char * number_str = BN_bn2hex(share);
         std::string str(number_str);
         shares_bignum.push_back({ i+1, str});
+        BN_free(share);
+        OPENSSL_free(number_str);
     }
+
     return shares_bignum;
 }
 
