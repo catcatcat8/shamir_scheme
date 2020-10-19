@@ -38,7 +38,6 @@ std::string curve25519_pr_key_gen() {
 BIGNUM *polinom(std::vector<std::string> coefs, std::string secr, int x) {
     BIGNUM *result = NULL;
     BN_dec2bn(&result, "0");
-    BN_CTX *ctx = BN_CTX_new();
     int j = 1;  //текущая степень x
 
     BIGNUM *sum = NULL;  //результат полинома без сложения с секретом
@@ -52,20 +51,17 @@ BIGNUM *polinom(std::vector<std::string> coefs, std::string secr, int x) {
         const char * c = i.c_str();
         BN_hex2bn(&coef_res, c);  //переводим коэффициент в BIGNUM(hex)
 
-        BIGNUM *x_res = NULL;
-        std::string x_int = std::to_string(x);
-        char const *x_char = x_int.c_str();
-        BN_dec2bn(&x_res, x_char);  //переводим значение x в BIGNUM(dec)
+        int x_pow = pow(x, j);
 
-        coef_pov_res = x_res;
-        for (int jj=0; jj<j; jj++) {  //возведение в степень j числа x
-            BN_mul(x_res, coef_pov_res, x_res, ctx);
-        }
+        BIGNUM *x_res = NULL;
+        std::string x_res_str = std::to_string(x_pow);
+        char const *x_char = x_res_str.c_str();
+        BN_dec2bn(&x_res, x_char);
 
         BN_mul(coef_res, x_res, coef_res, ctx);  //результат x*a(j)
         BN_add(sum, sum, coef_res);  //накапливаем сумму a(j)*x^j
 
-        j += 1;
+        j++;
         BN_free(coef_pov_res);
         BN_free(coef_res);
     }
@@ -138,6 +134,7 @@ std::string recover(std::vector<std::pair<int, std::string>> shares) {
     int ind_cur_y = 0;
     for (auto i : x_divs) {
         BIGNUM *mul_result = NULL;
+        BN_dec2bn(&mul_result, "0");
         BN_CTX *ctx = BN_CTX_new();
 
         BIGNUM *cur_y = NULL;
@@ -154,6 +151,7 @@ std::string recover(std::vector<std::pair<int, std::string>> shares) {
         std::string str(result_str);
         mul.push_back(str);
         OPENSSL_free(result_str);
+        ind_cur_y++;
     }
 
     BIGNUM *final_res = NULL;
@@ -199,7 +197,7 @@ int main() {
     }
 
     std::string private_key_recover = recover(recover_parts);
-    std::cout << private_key_recover;
+    std::cout << "\nrecover stdout:\n" << private_key_recover;
 
     return 0;
 }
