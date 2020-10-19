@@ -4,10 +4,28 @@
 #include <iomanip>
 #include <vector>
 #include <cmath>
+#include <locale>
 #include <openssl/bn.h>
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 #include <openssl/ossl_typ.h>
+
+/* Split строки по пробелам */
+std::vector<std::string> split(std::string line) {
+    std::vector<std::string> words;
+    std::string buffer = "";      //буфферная строка
+    for(int i=0; i <= line.size(); i++){
+        if(line[i] != ' '){      // " " сплиттер
+            buffer += line[i];
+        }
+        else{
+            words.push_back(buffer);
+            buffer = "";
+        }
+    }
+    words.push_back(buffer);
+    return words;
+}
 
 /* Возвращает SHA-256 hash */
 std::string sha256(const std::string str) {
@@ -174,34 +192,46 @@ std::string recover(std::vector<std::pair<int, std::string>> shares) {
     return fn_result;
 }
 
-int main() {
-    uint16_t N;
-    uint16_t T;
-    std::string curve25519_private_key = curve25519_pr_key_gen();  //генерация приватного ключа
-    std::cout << "stdin:\n" << curve25519_private_key << std::endl;
-    std::cin >> N >> T;
-
-    std::vector<std::pair<int, std::string>> shares = split(curve25519_private_key, N, T);  //разделение приватного ключа на N кусков
-
-    std::cout << "\nstdout:\n";
-    for (auto share : shares) {
-        std::cout <<share.first << " " << share.second << "\n";
+int main(int argc, char* argv[]) {
+    if ((std::string(argv[1]) != "split") && (std::string(argv[1]) != "recover")) {
+        std::cout << "Проверьте правильность введенных вами данных!\n";
+        return 1;
     }
 
-    std::vector<std::pair<int, std::string>> recover_parts;
-    int cur_shares_amount = 0;
-    for (auto share : shares) {
-        if (cur_shares_amount<T) {
-            recover_parts.push_back(share);
+    if (std::string(argv[1]) == "split") {
+        uint16_t N;
+        uint16_t T;
+        std::string curve25519_private_key = curve25519_pr_key_gen();  //генерация приватного ключа
+        std::cout << "stdin:\n" << curve25519_private_key << std::endl;
+        std::cin >> N >> T;
+
+        std::vector<std::pair<int, std::string>> shares = split(curve25519_private_key, N,
+                                                                T);  //разделение приватного ключа на N кусков
+
+        std::cout << "\nstdout:\n";
+        for (auto share : shares) {
+            std::cout << share.first << " " << share.second << "\n";
         }
-        else {
-            break;
-        }
-        cur_shares_amount++;
     }
 
-    std::string private_key_recover = recover(recover_parts);
-    std::cout << "\nrecover stdout:\n" << private_key_recover;
+    if (std::string(argv[1]) == "recover") {
+        std::vector<std::pair<int, std::string>> recover_parts;
+        std::string input_share;
+        getline(std::cin, input_share);
+        while (input_share != "") {  //ввод частей в режиме recover с клавиатуры
+            std::vector<std::string> split_result = split(input_share);
+            int x_point = stoi(split_result[0]);
+            recover_parts.push_back({x_point, split_result[1]});
+            getline(std::cin, input_share);
+        }
+
+        std::string private_key_recover = recover(recover_parts);
+        std::cout << "\nstdout:\n";
+        std::locale loc;
+        for (std::string::size_type i=0; i<private_key_recover.length(); ++i)
+            std::cout << std::tolower(private_key_recover[i],loc);
+        std::cout << "\n";
+    }
 
     return 0;
 }
