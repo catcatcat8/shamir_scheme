@@ -40,7 +40,7 @@ BIGNUM *polinom(std::vector<uint64_t> coefs, std::string secr, int x) {
     int cur_pow = 1;
     BIGNUM *result = BN_new();
     BN_CTX *ctx = BN_CTX_new();
-    int cur_result = 0;
+    uint64_t cur_result = 0;
     for (auto i: coefs) {
         cur_result += (pow(x,cur_pow)*i);
         cur_pow += 1;
@@ -65,7 +65,7 @@ std::vector<std::pair<int, std::string>> split(std::string secret, uint16_t n, u
 
     std::vector<uint64_t> coefs;
     for (int i = 1; i<t; i++) {
-        coefs.push_back((std::rand() % 1000));
+        coefs.push_back((1 + std::rand() % (18446744073709551614)));
     }
     /*
     for (auto i: coefs) {  //переводим все коэффициенты в BIGNUM
@@ -84,37 +84,19 @@ std::vector<std::pair<int, std::string>> split(std::string secret, uint16_t n, u
         shares_bignum.push_back({ i+1, str});
     }
     return shares_bignum;
-    /* char * number_str = BN_bn2dec(p);  //переводим BIGNUM в char(hex)
-    printf("%s\n", number_str);
-     */
 }
 
 int main() {
+    srand ( time(NULL) );
     uint16_t N;
     uint16_t T;
     std::string curve25519_private_key = curve25519_pr_key_gen();
     std::cout << "stdin:\n" << curve25519_private_key << std::endl;
     std::cin >> N >> T;
     std::vector<std::pair<int, std::string>> shares = split(curve25519_private_key, N, T);
+    std::cout << "\nstdout:\n";
     for (auto share : shares) {
-        std::cout << share.first << ": " << share.second << std::endl;
+        std::cout << "(" <<share.first << "; " << share.second << ")\n";
     }
     return 0;
 }
-/*
-int main ()
-{
-    static const char p_str[] = "82019154470699086128524248488673846867876336512717";
-
-    BIGNUM *p = BN_new();
-    BN_dec2bn(&p, p_str);
-
-    char * number_str = BN_bn2hex(p);
-    printf("%s\n", number_str);
-
-    OPENSSL_free(number_str);
-    BN_free(p);
-
-    return 0;
-}
-*/
