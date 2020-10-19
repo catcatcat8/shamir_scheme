@@ -51,14 +51,18 @@ BIGNUM *polinom(std::vector<std::string> coefs, std::string secr, int x) {
         const char * c = i.c_str();
         BN_hex2bn(&coef_res, c);  //переводим коэффициент в BIGNUM(hex)
 
-        int x_pow = pow(x, j);
+        BIGNUM *pow = NULL;  //результат возведения в степень x
+        BN_dec2bn(&pow, "1");
 
-        BIGNUM *x_res = NULL;
-        std::string x_res_str = std::to_string(x_pow);
-        char const *x_char = x_res_str.c_str();
-        BN_dec2bn(&x_res, x_char);
+        std::string x_str = std::to_string(x);
+        char const *x_char = x_str.c_str();
+        BIGNUM *our_x = NULL;
+        BN_dec2bn(&our_x, x_char);
+        for (int cur_pow=1; cur_pow<=j; cur_pow++) {  //возводим x в степень j
+            BN_mul(pow, our_x, pow, ctx);
+        }
 
-        BN_mul(coef_res, x_res, coef_res, ctx);  //результат x*a(j)
+        BN_mul(coef_res, pow, coef_res, ctx);  //результат x*a(j)
         BN_add(sum, sum, coef_res);  //накапливаем сумму a(j)*x^j
 
         j++;
