@@ -36,15 +36,19 @@ std::string curve25519_pr_key_gen() {
 
 /* Возвращает результат полинома n-1 степени от x: f(x) = secret + a(1) * x + a(2) * x^2 + ... + a(n-1) * x^(n-1) */
 BIGNUM *polinom(std::vector<std::string> coefs, std::string secr, int x) {
-    BIGNUM *result = BN_new();
+    BIGNUM *result = NULL;
+    BN_dec2bn(&result, "0");
     BN_CTX *ctx = BN_CTX_new();
     int j = 1;  //текущая степень x
-    BIGNUM *sum = BN_new();  //результат полинома без сложения с секретом
+
+    BIGNUM *sum = NULL;  //результат полинома без сложения с секретом
+    BN_dec2bn(&sum, "0");
 
     for (auto i: coefs) {
         BN_CTX *ctx = BN_CTX_new();
         BIGNUM *coef_pov_res = NULL;
         BIGNUM *coef_res = NULL;
+
         const char * c = i.c_str();
         BN_hex2bn(&coef_res, c);  //переводим коэффициент в BIGNUM(hex)
 
@@ -103,16 +107,99 @@ std::vector<std::pair<int, std::string>> split(std::string secret, uint16_t n, u
     return shares_bignum;
 }
 
+/* Восстановление секрета по T частям */
+std::string recover(std::vector<std::pair<int, std::string>> shares) {
+    std::vector<double> x;  //коэффициенты x частей секрета
+    std::vector<std::string> y;  //коэффициенты y частей секрета
+
+    for (auto i: shares) {
+        x.push_back(i.first*1.0);
+    }
+    for (auto i: shares) {
+        y.push_back(i.second);
+    }
+
+    /* Возвращение исходной полиномиальной функции */
+    std::vector<std::string> mul;
+
+    std::vector<double> x_divs;
+    for (int j=0; j<x.size(); j++) {
+        double result = 1.0;
+        for (int i = 0; i < x.size(); i++) {
+            int m = i;
+            if (m != j) {
+                double slag = (0 - x[m]) / (x[j] - x[m]);
+                result *= slag;
+            }
+        }
+        x_divs.push_back(result);
+    }
+
+    int ind_cur_y = 0;
+    for (auto i : x_divs) {
+        BIGNUM *mul_result = NULL;
+        BN_CTX *ctx = BN_CTX_new();
+
+        BIGNUM *cur_y = NULL;
+        const char * cur_y_char = y[ind_cur_y].c_str();
+        BN_hex2bn(&cur_y, cur_y_char);
+
+        BIGNUM *cur_x = NULL;
+        std::string x_double = std::to_string(i);
+        char const *x_char = x_double.c_str();
+        BN_dec2bn(&cur_x, x_char);
+
+        BN_mul(mul_result, cur_x, cur_y, ctx);
+        char *result_str = BN_bn2hex(mul_result);
+        std::string str(result_str);
+        mul.push_back(str);
+        OPENSSL_free(result_str);
+    }
+
+    BIGNUM *final_res = NULL;
+    BN_dec2bn(&final_res, "0");
+    for (auto i : mul) {
+        const char * c = i.c_str();
+        BIGNUM *sl = NULL;
+        BN_hex2bn(&sl, c);
+        BN_add(final_res, final_res, sl);
+    }
+
+    char *fn_res = BN_bn2hex(final_res);
+    std::string fn_result(fn_res);
+    OPENSSL_free(fn_res);
+
+    return fn_result;
+}
+
 int main() {
     uint16_t N;
     uint16_t T;
     std::string curve25519_private_key = curve25519_pr_key_gen();  //генерация приватного ключа
     std::cout << "stdin:\n" << curve25519_private_key << std::endl;
     std::cin >> N >> T;
+
     std::vector<std::pair<int, std::string>> shares = split(curve25519_private_key, N, T);  //разделение приватного ключа на N кусков
+
     std::cout << "\nstdout:\n";
     for (auto share : shares) {
-        std::cout << "(" <<share.first << "; " << share.second << ")\n";
+        std::cout <<share.first << " " << share.second << "\n";
     }
+
+    std::vector<std::pair<int, std::string>> recover_parts;
+    int cur_shares_amount = 0;
+    for (auto share : shares) {
+        if (cur_shares_amount<T) {
+            recover_parts.push_back(share);
+        }
+        else {
+            break;
+        }
+        cur_shares_amount++;
+    }
+
+    std::string private_key_recover = recover(recover_parts);
+    std::cout << private_key_recover;
+
     return 0;
 }
