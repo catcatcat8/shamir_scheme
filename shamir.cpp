@@ -198,7 +198,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (std::string(argv[1]) == "split") {
+    if (std::string(argv[1]) == "split") {  //mode: split
         uint16_t N;
         uint16_t T;
         std::string curve25519_private_key = curve25519_pr_key_gen();  //генерация приватного ключа
@@ -214,9 +214,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (std::string(argv[1]) == "recover") {
+    if (std::string(argv[1]) == "recover") {  //mode: recover
         std::vector<std::pair<int, std::string>> recover_parts;
         std::string input_share;
+        std::cout << "stdin:\n";
         getline(std::cin, input_share);
         while (input_share != "") {  //ввод частей в режиме recover с клавиатуры
             std::vector<std::string> split_result = split(input_share);
