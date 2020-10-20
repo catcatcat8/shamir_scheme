@@ -24,7 +24,7 @@ https://park.mail.ru/curriculum/program/lesson/14832/#homework_5096
 
 ### Пример сборки, запуска, работы программы
 
-![](shamir.png "Example")
+![](shamir_example.png "Example")
 
 ### Используемые несистемные библиотеки
 openssl (https://www.openssl.org/)
