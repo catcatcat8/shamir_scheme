@@ -103,8 +103,8 @@ std::vector<std::pair<int, std::string>> split(std::string secret, uint16_t n, u
     std::vector<std::string> coefs;  //массив рандомных коэффициентов полинома
 
     for (int i=1; i<t; i++) {  //генерация t-1 коэффициентов
-        unsigned char buf[32];
-        RAND_bytes(buf, 32);  //генерируем 32 рандомных байта коэффициента
+        unsigned char buf[16];
+        RAND_bytes(buf, 16);  //генерируем 32 рандомных байта коэффициента
         std::string str_buf((char*)buf);
         std::string cur_cof = sha256(str_buf);  //коэффициент - sha256(random 32 bytes)
         coefs.push_back(cur_cof);
@@ -165,11 +165,11 @@ std::string recover(std::vector<std::pair<int, std::string>> shares) {
 
         BIGNUM *cur_x = NULL;
         std::string x_double = std::to_string(i);
-        char const *x_char = x_double.c_str();
+        const char * x_char = x_double.c_str();
         BN_dec2bn(&cur_x, x_char);
 
         BN_mul(mul_result, cur_x, cur_y, ctx);
-        char *result_str = BN_bn2hex(mul_result);
+        char *result_str = BN_bn2dec(mul_result);
         std::string str(result_str);
         mul.push_back(str);
         OPENSSL_free(result_str);
@@ -181,7 +181,7 @@ std::string recover(std::vector<std::pair<int, std::string>> shares) {
     for (auto i : mul) {
         const char * c = i.c_str();
         BIGNUM *sl = NULL;
-        BN_hex2bn(&sl, c);
+        BN_dec2bn(&sl, c);
         BN_add(final_res, final_res, sl);
     }
 
@@ -193,6 +193,7 @@ std::string recover(std::vector<std::pair<int, std::string>> shares) {
 }
 
 int main(int argc, char* argv[]) {
+
     if ((std::string(argv[1]) != "split") && (std::string(argv[1]) != "recover")) {
         std::cout << "Проверьте правильность введенных вами данных!\n";
         return 1;
@@ -216,6 +217,7 @@ int main(int argc, char* argv[]) {
 
     if (std::string(argv[1]) == "recover") {  //mode: recover
         std::vector<std::pair<int, std::string>> recover_parts;
+
         std::string input_share;
         std::cout << "stdin:\n";
         getline(std::cin, input_share);
