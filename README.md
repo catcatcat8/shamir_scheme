@@ -37,7 +37,7 @@ https://park.mail.ru/curriculum/program/lesson/14832/#homework_5096
 > 5 0AA63EBC6A1E7A41F9A84D18BA9D553DC21B0A8EDBD03EEF860F10ACB583AD339F
 
 
-### Пример сборки, запуска, работы программы
+### Примеры сборки, запуска, работы программы
 
 ![](shamir_example.png "Example")
 ![](shamir_example1.png "Example")
