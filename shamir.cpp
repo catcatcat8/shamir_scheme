@@ -4,11 +4,16 @@
 #include <iomanip>
 #include <vector>
 #include <cmath>
-#include <locale>
 #include <openssl/bn.h>
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 #include <openssl/ossl_typ.h>
+#include <boost/multiprecision/cpp_dec_float.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
+
+using boost::multiprecision::cpp_dec_float;
+using boost::multiprecision::cpp_int;
+typedef boost::multiprecision::number<cpp_dec_float<100>> mp_type;  //для работы с бесконечными дробями в полиномиальной функции
 
 /* Split строки по пробелам */
 std::vector<std::string> split(std::string line) {
@@ -138,15 +143,15 @@ std::string recover(std::vector<std::pair<int, std::string>> shares) {
     }
 
     /* Возвращение исходной полиномиальной функции */
-    std::vector<std::string> mul;
-
-    std::vector<double> x_divs;
-    for (int j=0; j<x.size(); j++) {
-        double result = 1.0;
+    std::vector<mp_type> x_divs;
+    for (int j=0; j<x.size(); j++) {  //считаем частные
+        mp_type result = 1.0;
         for (int i = 0; i < x.size(); i++) {
             int m = i;
             if (m != j) {
-                double slag = (0 - x[m]) / (x[j] - x[m]);
+                mp_type x_m(x[m]);
+                mp_type x_j(x[j]);
+                mp_type slag = (0 - x_m) / (x_j - x_m);
                 result *= slag;
             }
         }
@@ -154,42 +159,26 @@ std::string recover(std::vector<std::pair<int, std::string>> shares) {
     }
 
     int ind_cur_y = 0;
-    for (auto i : x_divs) {
-        BIGNUM *mul_result = NULL;
-        BN_dec2bn(&mul_result, "0");
-        BN_CTX *ctx = BN_CTX_new();
+    mp_type result("0");
+    for (auto i : x_divs) {  //умножаем каждый x на соответствующий y
 
         BIGNUM *cur_y = NULL;
         const char * cur_y_char = y[ind_cur_y].c_str();
         BN_hex2bn(&cur_y, cur_y_char);
+        cur_y_char = BN_bn2dec(cur_y);
+        mp_type boost_y_double(cur_y_char);
 
-        BIGNUM *cur_x = NULL;
-        std::string x_double = std::to_string(i);
-        const char * x_char = x_double.c_str();
-        BN_dec2bn(&cur_x, x_char);
+        mp_type mul_result = i*boost_y_double;
+        result += mul_result;  //складываем результаты умножений
 
-        BN_mul(mul_result, cur_x, cur_y, ctx);
-        char *result_str = BN_bn2dec(mul_result);
-        std::string str(result_str);
-        mul.push_back(str);
-        OPENSSL_free(result_str);
         ind_cur_y++;
     }
+    cpp_int res_int(result+1);  //из-за округления double приходится прибавлять единицу
+    std::stringstream stream;
+    stream << std::hex << res_int;
+    std::string result_private_key = stream.str();
 
-    BIGNUM *final_res = NULL;
-    BN_dec2bn(&final_res, "0");
-    for (auto i : mul) {
-        const char * c = i.c_str();
-        BIGNUM *sl = NULL;
-        BN_dec2bn(&sl, c);
-        BN_add(final_res, final_res, sl);
-    }
-
-    char *fn_res = BN_bn2hex(final_res);
-    std::string fn_result(fn_res);
-    OPENSSL_free(fn_res);
-
-    return fn_result;
+    return result_private_key;
 }
 
 int main(int argc, char* argv[]) {
