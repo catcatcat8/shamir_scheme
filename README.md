@@ -45,3 +45,6 @@ https://park.mail.ru/curriculum/program/lesson/14832/#homework_5096
 OpenSSL (https://www.openssl.org/)
 
 Boost Multiprecision library (https://www.boost.org/)
+
+## Лицензия
+MIT License (https://opensource.org/licenses/MIT)
