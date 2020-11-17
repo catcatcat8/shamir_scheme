@@ -9,7 +9,7 @@ The program receives as input a single command-line argument indicating the mode
 
 > ./program recover - private key recovering mode
 
-## How to compile
+## Build
 Install OpenSSL library with the command `sudo apt-get install libssl-dev`.
 
 Install Boost Multiprecision library with the command `sudo apt-get install libboost-all-dev`.
@@ -17,7 +17,7 @@ Install Boost Multiprecision library with the command `sudo apt-get install libb
 To build a project write in the command-line: 
 > g++ -o shamir shamir.cpp -lssl -lcrypto
 
-## How to run
+## Run
 
 ### Private key splitting mode
 To run the project in private key splitting mode write in the command-line:
