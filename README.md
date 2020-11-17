@@ -1,35 +1,39 @@
-# Схема разделения секрета шамира
+# Shamir's Secret Sharing Scheme
 
-## Описание программы
-Программа, разделяющая приватный ключ ECDSA сurve25519 на N частей по схеме Шамира и восстанавливающая его при предъявлении любых T частей.
-https://park.mail.ru/curriculum/program/lesson/14832/#homework_5096
+## Project description
+A program that divides any ECDSA private key into N parts according to Shamir's secret sharing algorithm and restores it upon presentation of any T parts.
 
-## Конфигурация
-Программа получает на вход единственный аргумент указывающий режим работы программы:
-> ./program split - режим разделения приватного ключа
+## Configuration
+The program receives as input a single command-line argument indicating the mode of the program:
+> ./program split - private key splitting mode
 
-> ./program recover - режим восстановления приватного ключа
+> ./program recover - private key recovering mode
 
-## Сборка
-Чтобы собрать проект в командной строке напишите: 
+## How to compile
+Install OpenSSL library with the command `sudo apt-get install libssl-dev`.
+
+Install Boost Multiprecision library with the command `sudo apt-get install libboost-all-dev`.
+
+To build a project write in the command-line: 
 > g++ -o shamir shamir.cpp -lssl -lcrypto
 
-## Запуск
+## How to run
 
-### Режим разделения приватного ключа
-Чтобы запустить проект в режиме разделения приватного ключа в командной строке напишите: 
+### Private key splitting mode
+To run the project in private key splitting mode write in the command-line:
 > ./shamir split
 
-После этого введите с клавиатуры два параметра через пробел: N T
+After that, enter from the keyboard two parameters separated by a space: N T
 
-### Режим восстановления приватного ключа
-Чтобы запустить проект в режиме восстановления приватного ключа в командной строке напишите: 
+### Private key recovering mode
+To run the project in private key recovering mode write in the command-line:
 > ./shamir recover
 
-После этого вводите T кусков ключей с клавиатуры через enter.
-Программа будет считывать ваши ключи до тех пор пока вы не введете пустую строку.
+After that, enter from the keyboard T shares of private key via enter.
 
-Например:
+The program reads your shares of private key until you enter an empty string.
+
+For example:
 > 3 049C3A0FC21923A91E656294018C7473C31E885A6ABF86F02BC2C67D04779F01BF
 
 > 4 0748FFBFB3294CA3D2281293AB72A2C5B94BF631CC20C2EEC25AD225AD0A0C9162
@@ -37,14 +41,14 @@ https://park.mail.ru/curriculum/program/lesson/14832/#homework_5096
 > 5 0AA63EBC6A1E7A41F9A84D18BA9D553DC21B0A8EDBD03EEF860F10ACB583AD339F
 
 
-## Пример сборки, запуска, работы программы
+## An example of building, running, working the program
 
 ![](shamir_example.png "Example")
 
-## Используемые несистемные библиотеки
+## Used non-system libraries
 OpenSSL (https://www.openssl.org/)
 
 Boost Multiprecision library (https://www.boost.org/)
 
-## Лицензия
+## License
 MIT License (https://opensource.org/licenses/MIT)
