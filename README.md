@@ -3,12 +3,6 @@
 ## Project description
 A program that divides any ECDSA private key into N shares according to Shamir's secret sharing algorithm and restores it upon presentation of any T shares.
 
-## Configuration
-Single command-line argument indicating the mode of the program:
-> ./program split - private key splitting mode
-
-> ./program recover - private key recovering mode
-
 ## Build
 Install OpenSSL library: 
 
