@@ -9,6 +9,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
+option(SHAMIR_BUILD_TESTS "Build the test suite" ON)
 option(SHAMIR_WERROR "Treat compiler warnings as errors" OFF)
 option(SHAMIR_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
@@ -37,3 +38,8 @@ target_link_libraries(shamir PUBLIC OpenSSL::Crypto)
 add_executable(shamir_cli src/cli.cpp)
 target_link_libraries(shamir_cli PRIVATE shamir)
 set_target_properties(shamir_cli PROPERTIES OUTPUT_NAME shamir)
+
+if(SHAMIR_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
