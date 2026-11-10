@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: gcc / Release
+            cc: gcc
+            cxx: g++
+            flags: -DCMAKE_BUILD_TYPE=Release
+          - name: clang / Debug + ASan + UBSan
+            cc: clang
+            cxx: clang++
+            flags: -DCMAKE_BUILD_TYPE=Debug -DSHAMIR_SANITIZE=ON
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev cmake
+
+      - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake -S . -B build -DSHAMIR_WERROR=ON ${{ matrix.flags }}
+
+      - name: Build
+        run: cmake --build build -j "$(nproc)"
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
